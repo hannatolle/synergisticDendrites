@@ -82,16 +82,16 @@ for sec in axonA1:
 #stim2.dur = 0.5
 #stim2.amp = 1
 
-ISI = 1 * ms
-NUM = 20
+ISI = 20 * ms
+NUM = 100
 START = 1 * ms
 NOISE = True
 
-TSTOP = 100 * ms
+TSTOP = 1000 * ms
 
-syn_ = h.Exp2Syn(h.dendA1_0(0.5))
-syn_.tau1 = 4* ms
-syn_.tau2 = 10* ms
+syn_ = h.Exp2Syn(h.dendA1_0010111(0.5))
+syn_.tau1 = 1* ms
+syn_.tau2 = 4* ms
 syn_.e = 0*mV
 
 ns = h.NetStim()
@@ -102,7 +102,7 @@ ns.start = START
 ns.noise = NOISE
 
 # specify the (i, 0, 0)th random stream
-ns.noiseFromRandom123(0, 0, 0)
+ns.noiseFromRandom123(1, 0, 0)
 
 ns.seed(1)
 
@@ -119,24 +119,24 @@ syn_i_vec = h.Vector()
 syn_i_vec.record(syn_._ref_i)
 
 # Show stim on 3d plot
-shape_window.point_mark(syn_,0)
+#shape_window.point_mark(syn_,0)
 
 #shape_window.point_mark(ns,3)
 
 v_vec_soma = h.Vector()
 #v_vec_soma.record(h.somaA(0.5)._ref_v) # change recoding pos
 
-v_vec_soma.record(h.dendA1_01001(0.5)._ref_v)
+v_vec_soma.record(h.somaA(0.5)._ref_v)
 
-#v_vec_dend = h.Vector()
-#v_vec_dend.record(h.dendA1_01001(0.7)._ref_v)
+v_vec_dend = h.Vector()
+v_vec_dend.record(h.dendA1_0010111(0.5)._ref_v)
 t_vec.record(h._ref_t)
 
 # run simulation
 h.tstop = TSTOP  # ms
 h.v_init = Vrest
 h.run()  
-    
+ 
 # plot voltage vs time
 plt.figure(figsize=(8,4)) # Default figsize is (8,6)
 plt.plot(t_vec, v_vec_soma, 'r', label='soma')

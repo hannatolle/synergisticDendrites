@@ -1,2 +1,6 @@
 # ignore compiled files
 x86_64/
+
+# ignore python temporary files
+.ipynb_checkpoints/
+

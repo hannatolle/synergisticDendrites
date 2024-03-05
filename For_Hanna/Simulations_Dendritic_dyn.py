@@ -135,8 +135,8 @@ Inpsynapses_AMPA = [createSynapse(h,Sections,IndxSour[i], loc=1, tau=tau_AMPA, e
 Inpsynapses_NMDA = [createNMDA_Synapse(h,Sections,IndxSour[i], loc=1, tau=tau_NMDA, e=0) for i in range(len(IndxSour))]
 
 # connect inputs to synapses E
-Inpconnections_AMPA = [connectStim(h,Inpsynapses_AMPA[i], InputsStim[i], delay=delay, weight=100*us) for i in range(len(IndxSour))]
-Inpconnections_NMDA = [connectStim(h,Inpsynapses_NMDA[i], InputsStim[i], delay=delay, weight=100*us) for i in range(len(IndxSour))]
+Inpconnections_AMPA = [connectStim(h,Inpsynapses_AMPA[i], InputsStim[i], delay=delay, weight=150*us) for i in range(len(IndxSour))]
+Inpconnections_NMDA = [connectStim(h,Inpsynapses_NMDA[i], InputsStim[i], delay=delay, weight=150*us) for i in range(len(IndxSour))]
 
 ##############################################################
 # prepare output variable

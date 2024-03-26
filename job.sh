@@ -8,6 +8,6 @@
 module load anaconda3/personal
 source activate py311
 
-cd ~/projects/synergisticDendrites/hpc_scripts
+cd ~/projects/synergisticDendrites/
 nrnivmodl L5bPCmodelsEH/mod/
 python main.py ${HOME} ${PBS_ARRAY_INDEX}

@@ -4,7 +4,7 @@ import os
 from neuron import h
 from neuron.units import mV, ms, sec, um, us
 
-from For_Hanna/Edu_functions import *
+from Edu_functions import *
 
 
 def run(nn, path2home):

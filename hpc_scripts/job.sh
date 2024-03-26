@@ -3,10 +3,10 @@
 #PBS -l select=1:ncpus=32:mem=32gb
 #PBS -l walltime=08:00:00
 #PBS -N dend_sims
-#PBS -J 1-2
+#PBS -J 1
  
 module load anaconda3/personal
+source activate py311
 
-source ~/venv/bin/activate
 cd ~/projects/synergisticDendrites/hpc_scripts
 python main.py ${HOME} ${PBS_ARRAY_INDEX}

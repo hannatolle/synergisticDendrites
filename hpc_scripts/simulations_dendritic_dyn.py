@@ -55,7 +55,7 @@ def run(nn, path2home):
     # Initialize
 
     # Simulation max time and integration time step
-    tmax = 10000  # ms
+    tmax = 200000  # ms
     dt = 0.0125
     h.dt = dt
 

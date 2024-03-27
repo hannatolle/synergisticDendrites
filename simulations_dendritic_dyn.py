@@ -70,7 +70,7 @@ def run(nn, path2home):
 
     # Background parameters
     delay = 0
-    weight = 0.05*us
+    weight = 0.055*us
 
     # Different time constants for E and I synapses
     # AMPA: 0.2 ms rise, 1.7 ms decay

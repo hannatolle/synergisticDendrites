@@ -7,7 +7,7 @@ from time import time
 start = time()
 
 # Define indices of input synapses (indices of 2 out of 193 dendrite sections)
-params = list(product(range(193), range(193)))
+params = [(i, j) for i, j in product(range(193), repeat=2) if i != j]
 
 # Fetch job_id from command-line argument and set parameters
 path2home = sys.argv[1]

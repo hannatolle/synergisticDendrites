@@ -43,18 +43,11 @@ tmax = 10000 #ms
 dt = 0.0125
 h.dt = dt
 
-#Number of sources
-numSour = 2
-
 #Number of noisy synapses and inputs
 numNoiseInputs = 5000
 
 #Time binning for saving
-timebin = 1
-
-#Background parameters
-delay = 0
-weight = 0.05* us
+timebin = 1 #ms
 
 #Different time constants for E and I synapses
 #AMPA: 0.2 ms rise, 1.7 ms decay
@@ -67,20 +60,59 @@ tau_GABA = [1,5] #GABA
 #Spike threshold
 thres = -30
 
-################################################################
-#CREATING BACKGROUND NOISE SYNAPSES UNIFORMLY DISTRIBUTED IN DENDITRIC LENGTH DISTANCE
-ee,loc,dendIdx = Background(h,Sections,numNoiseInputs)
+#Excitatory and inhibitory proportions
+pps = [0.8,0.2]
+
+####################################################
+# CREATING BACKGROUND NOISE SYNAPSES UNIFORMLY DISTRIBUTED IN DENDITRIC SURFACE AREA
+ee, loc, dendIdx = Background(h, Sections, numNoiseInputs, pp=pps)
+
+#Background parameters
+delay = 0
 
 numNoiseInputs = len(ee)
 
-#Index of excitatory synapses (important to NMDA receptors)
-E_indx = np.where(ee==0)[0]
+#Excitatory average weight depending on neuroreceptors
+We = {"AMPA" : 0.000592, "NMDA":0.00053, "Both":0.000287}
 
-I_indx = np.where(ee<0)[0]
+#Define the case
+Case = "Both"
+
+ww = We[Case]
+
+#Standard deviation for the log-Normal distribution 
+weStd = 0.55 #Excitatory
+wiStd = 0.5 #Inhibitory
+
+weightE = np.random.lognormal(np.log(ww),weStd,np.sum(ee>=0)) #We[Case] #* us #microsiemens
+weightI = np.random.lognormal(np.log(0.001),wiStd,np.sum(ee<0)) #We[Case] #* us #microsiemens
+
+# Index of excitatory synapses (important to NMDA receptors)
+E_indx = np.where(ee == 0)[0]
+
+I_indx = np.where(ee < 0)[0]
 
 ###############################################################
-# Selecting sources inputs positions
+# Selecting sources inputs positions from a List of candidates 
+Data = pd.read_csv("Inputs_info_"+Case+".csv")
 
+dendIndxInp = Data.InpIndx.values
+dendlocInp = Data['loc'].values
+
+#Random choice
+IndB = np.random.choice(Data[Data.Category == 'Basal'].index,2,replace=False)
+IndM = np.random.choice(Data[Data.Category == 'Mid'].index,2,replace=False)
+IndA = np.random.choice(Data[Data.Category == 'Api'].index,2,replace=False)
+
+Inpidx_sel = np.array([dendIndxInp[IndB],dendIndxInp[IndM],dendIndxInp[IndA]]).flatten()
+Inploc_sel = np.array([dendlocInp[IndB],dendlocInp[IndM],dendlocInp[IndA]]).flatten()
+
+#Input weight
+WInp = 0.004
+
+numSour = len(Inpidx_sel)
+
+""" OLD
 #Parse pair section index
 parser = argparse.ArgumentParser()
 
@@ -89,54 +121,62 @@ parser.add_argument('integers', metavar='N', type=str)
 nn = np.int16(parser.parse_args().integers.split(" "))
 
 IndxSour = np.array([nn[0],nn[1]])
+"""
 
 ########################################################
 # seeds for random inputs (background and sources)
 np.random.seed(123456)
 
 # background stimulus (NetStim) parameters
-isi=100*ms         # mean interspike time interval
-num=10000           # average number of spikes
-start=1*ms        # stimulus start time
-stop=tmax*ms      # simulation stop time
-noise=1         # noise parameter (must be a value from 0 to 1)
+isi = 400*ms         # mean interspike time interval
+num = 50+tmax*ms/isi           # average number of spikes
+start = 1*ms        # stimulus start time
+stop = tmax*ms      # simulation stop time
+noise = 1         # noise parameter (must be a value from 0 to 1)
 
-seeds=np.random.randint(10000, size=numNoiseInputs)
+seeds = np.random.randint(10000, size=numNoiseInputs)
 
 # input stimulus (NetStim) parameters
-isiInp=100*ms         # mean interspike time interval
-numInp=10000           # average number of spikes
-startInp=1*ms        # stimulus start time
-stop=tmax*ms      # simulation stop time
+isiInp = 100*ms         # mean interspike time interval
+StiDur = tmax #ms #Stimulus average duration
+numInp = (StiDur/isiInp)  + 50          # average number of spikes
+startInp = 5000*ms        # stimulus start time
+stop = tmax*ms      # simulation stop time
 
-seedsInp=np.random.randint(10000, size=len(IndxSour))
+seedsInp=np.random.randint(10000, size=numSour)
 
-###########################################################
+####################################################
 # Create synapses
 
-# create synapses I
-synapses_GABA = [createSynapse(h,Sections,dendIdx[i], loc=loc[i], tau=tau_GABA, e=ee[i]) for i in I_indx]
-synapses_AMPA = [createSynapse(h,Sections,dendIdx[i], loc=loc[i], tau=tau_AMPA, e=ee[i]) for i in E_indx]
-synapses_NMDA = [createNMDA_Synapse(h,Sections,dendIdx[i], loc=loc[i], tau=tau_NMDA, e=ee[i]) for i in E_indx]
+# Create inputs
+BackGroundstim = [createStim(h, isi=isi, num=num, start=start, noise=noise, seed=seeds[i]) for i in range(numNoiseInputs)]
+
+# Create synapses I
+synapses_GABA = [createSynapse(h, Sections, dendIdx[i], loc=loc[i], tau=tau_GABA, e=ee[i]) for i in I_indx]
+
+# Connect inputs to synapses I
+connections_GABA = [connectStim(h, synapses_GABA[i], BackGroundstim[I_indx[i]], delay=delay, weight=weightI[i]) for i in range(len(I_indx))]
+
+if Case=="Both" or Case=="AMPA":
+
+    synapses_AMPA = [createSynapse(h, Sections, dendIdx[i], loc=loc[i], tau=tau_AMPA, e=ee[i]) for i in E_indx]
+    connections_AMPA = [connectStim(h, synapses_AMPA[i], BackGroundstim[E_indx[i]], delay=delay, weight=weightE[i]) for i in range(len(E_indx))]
+
+if Case=="Both" or Case=="NMDA":
+    
+    synapses_NMDA = [createNMDA_Synapse(h, Sections, dendIdx[i], loc=loc[i], tau=tau_NMDA, e=ee[i]) for i in E_indx]
+    connections_NMDA = [connectStim(h, synapses_NMDA[i], BackGroundstim[E_indx[i]], delay=delay, weight=weightE[i]) for i in range(len(E_indx))]
 
 # create inputs
-BackGroundstim = [createStim(h,isi=isi, num=num, start=start, noise=noise, seed=seeds[i]) for i in range(numNoiseInputs)]
-
-# connect inputs to synapses I
-connections_GABA = [connectStim(h,synapses_GABA[i], BackGroundstim[I_indx[i]], delay=delay, weight=weight) for i in range(len(I_indx))]
-connections_AMPA = [connectStim(h,synapses_AMPA[i], BackGroundstim[E_indx[i]], delay=delay, weight=weight) for i in range(len(E_indx))]
-connections_NMDA = [connectStim(h,synapses_NMDA[i], BackGroundstim[E_indx[i]], delay=delay, weight=weight) for i in range(len(E_indx))]
-
-# create inputs
-InputsStim = [createStim(h,isi=isiInp, num=numInp, start=startInp, noise=noise, seed=seedsInp[i]) for i in range(len(IndxSour))]
+InputsStim = [createStim(h,isi=isiInp, num=numInp, start=startInp, noise=noise, seed=seedsInp[i]) for i in range(numSour)]
 
 # create synapses I
-Inpsynapses_AMPA = [createSynapse(h,Sections,IndxSour[i], loc=1, tau=tau_AMPA, e=0) for i in range(len(IndxSour))]
-Inpsynapses_NMDA = [createNMDA_Synapse(h,Sections,IndxSour[i], loc=1, tau=tau_NMDA, e=0) for i in range(len(IndxSour))]
+Inpsynapses_AMPA = [createSynapse(h,Sections,Inpidx_sel[i], loc=Inploc_sel[i], tau=tau_AMPA, e=0) for i in range(numSour)]
+Inpsynapses_NMDA = [createNMDA_Synapse(h,Sections,Inpidx_sel[i], loc=Inploc_sel[i], tau=tau_NMDA, e=0) for i in range(numSour)]
 
-# connect inputs to synapses E
-Inpconnections_AMPA = [connectStim(h,Inpsynapses_AMPA[i], InputsStim[i], delay=delay, weight=150*us) for i in range(len(IndxSour))]
-Inpconnections_NMDA = [connectStim(h,Inpsynapses_NMDA[i], InputsStim[i], delay=delay, weight=150*us) for i in range(len(IndxSour))]
+# connect inputs to synapses E 
+Inpconnections_AMPA = [connectStim(h,Inpsynapses_AMPA[i], InputsStim[i], delay=delay, weight=WInp) for i in range(numSour)]
+Inpconnections_NMDA = [connectStim(h,Inpsynapses_NMDA[i], InputsStim[i], delay=delay, weight=WInp) for i in range(numSour)]
 
 ##############################################################
 # prepare output variable
@@ -150,7 +190,7 @@ recordings['soma'].record(Soma[0](0.5)._ref_v) # soma membrane potential
 recordings['time'].record(h._ref_t) # time steps
 
 #Recording sources inputs 
-for i, dend0 in enumerate(range(len(IndxSour))):
+for i, dend0 in enumerate(range(numSour)):
     Inpconnections_AMPA[dend0].record(recordings['inputTime'][i], recordings['input'][i])
 
 ###############################################################
@@ -164,13 +204,17 @@ if not isExist:
    # Create a new directory because it does not exist
    os.makedirs(savdir)
 
-filename = savdir+"/Sim_pairs_"+str(nn[0])+"_"+str(nn[1])+"_tmax_"+str(tmax)+"_Cell_"+CellName+"_timebin_"+str(timebin)+"_numinputs_"+str(numNoiseInputs)+"_ISInoise_"+str(isi)+"_avgnumspikes_"+str(num)+".csv"
+fileInp = "Inputs_selected_Idx.txt"
+
+np.savetxt(fileInp, np.vstack([Inpidx_sel,Inploc_sel]).T, delimiter=',')
+
+filename = savdir+"/Sim_6inputs_tmax_"+str(tmax)+"_Cell_"+CellName+"_timebin_"+str(timebin)+"_numinputs_"+str(numNoiseInputs)+"_ISInoise_"+str(isi)+"_avgnumspikes_"+str(num)+".csv"
 
 ###############################################################
 
 if os.path.isfile(filename)==False:
 
-	print("Running Section ",nn[0],"-",nn[1]," Realization ")
+	print("Running")
 	
 	h.finitialize(-65 * mV)
 
@@ -212,7 +256,7 @@ if os.path.isfile(filename)==False:
 	TSer[:,1:] = InputsTS.T
 
 	Labels = [str(Soma[0])]
-	Labels += [str(Sections[j]) for j in IndxSour]
+	Labels += [str(Sections[j]) for j in Inpidx_sel]
 
 	Data = pd.DataFrame(columns = Labels)
 

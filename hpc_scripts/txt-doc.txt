@@ -1,0 +1,16 @@
+# Run this in the HPC once to set up the environment
+# where you'll run the python script in. The job
+# script will then need to "source" the venv.
+
+# create virtual environment
+virtualenv --python=python3.11 ~/venv
+
+# activate virtual environment
+source ~/venv/bin/activate
+
+# install packages in venv
+pip install -r requirements.txt
+
+# also compile the mod files once
+nrnivmodl L5bPCmodelsEH/mod/
+

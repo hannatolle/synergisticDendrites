@@ -192,6 +192,14 @@ def run(nn, path2home):
 		      'inputTime': [h.Vector() for i in range(numSour)],
 		      'time': h.Vector()}
 
+    #Record every 10*dt
+    ddt = 10*dt
+
+    # set up recordings
+    recordings['Vsoma'].record(Soma[0](0.5)._ref_v,ddt) # soma membrane potential
+    
+    recordings['time'].record(h._ref_t,ddt) # time steps
+
 	# set up recordings
 	recordings['soma'].record(Soma[0](0.5)._ref_v) # soma membrane potential
 	recordings['time'].record(h._ref_t) # time steps
@@ -249,9 +257,9 @@ def run(nn, path2home):
 
 		TimeSeries[1:, 0] = (np.sign(np.diff((1*(recordings["soma"] > thres)))) > 0)
 
-		Tw = int(timebin/dt)
-		TT = len(recordings['time'])
-		NT = int(TT/Tw)
+		Tw = int(timebin/(ddt))
+        TT = len(recordings['time'])
+        NT = int(TT/Tw)
 
 		TSer = np.zeros([NT, numSour+1], dtype=np.int16)
 

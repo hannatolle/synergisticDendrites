@@ -54,10 +54,17 @@ def run(nn, path2home):
 	####################################################
 	# Initialize
 
+<<<<<<< HEAD:hpc_scripts/simulations_dendritic_dyn.py
 	# Simulation max time and integration time step
 	tmax = 100  # ms
 	dt = 0.0125
 	h.dt = dt
+=======
+    # Simulation max time and integration time step
+    tmax = 200000  # ms
+    dt = 0.0125
+    h.dt = dt
+>>>>>>> 435d07bf7dc11351af797d63dfc4e079f397abce:simulations_dendritic_dyn.py
 
 	# Number of background synapses
 	numNoiseInputs = 5000
@@ -69,6 +76,7 @@ def run(nn, path2home):
 	delay = 0
 	weight = 0.05*us
 
+<<<<<<< HEAD:hpc_scripts/simulations_dendritic_dyn.py
 	# Different time constants for E and I synapses
 	# AMPA: 0.2 ms rise, 1.7 ms decay
 	# NMDA: 2 ms rise, 20 ms decay
@@ -76,6 +84,11 @@ def run(nn, path2home):
 	tau_AMPA = [0.2, 1.7]  # AMPA
 	tau_NMDA = [2, 20]     # NMDA
 	tau_GABA = [1, 5]      # GABA
+=======
+    # Background parameters
+    delay = 0
+    weight = 0.055*us
+>>>>>>> 435d07bf7dc11351af797d63dfc4e079f397abce:simulations_dendritic_dyn.py
 
 	# Spike threshold
 	thres = -30  # mV
